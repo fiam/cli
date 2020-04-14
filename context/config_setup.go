@@ -97,9 +97,6 @@ func setupConfigFile(filename string) (Config, error) {
 		_ = waitForEnter(os.Stdin)
 	}
 
-	fmt.Fprintln(os.Stderr, "Authentication complete. Press Enter to continue... ")
-	waitForEnter(os.Stdin)
-
 	// TODO cleaner error handling? this "should" always work given that we /just/ wrote the file...
 	return parseConfig(filename)
 }
