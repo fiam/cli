@@ -21,8 +21,8 @@ type Config interface {
 	Hosts() ([]*HostConfig, error)
 	ConfigForHost(string) (*HostConfig, error)
 	DefaultHostConfig() (*HostConfig, error)
-	Get(string, string) (string, error) // accept potentially blank hostname
-	Set(string, string, string) error   // accept potentially blank hostname
+	Get(string, string) (string, error)
+	Set(string, string, string) error
 	Write() error
 }
 
