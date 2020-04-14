@@ -107,7 +107,11 @@ func BasicClient() (*api.Client, error) {
 	}
 	opts = append(opts, api.AddHeader("User-Agent", fmt.Sprintf("GitHub CLI %s", Version)))
 	if c, err := context.ParseDefaultConfig(); err == nil {
-		opts = append(opts, api.AddHeader("Authorization", fmt.Sprintf("token %s", c.Token)))
+		if hostConfig, err := c.DefaultHostConfig(); err == nil {
+			// TODO change once we actually support using different usernames for a given host
+			token := hostConfig.Auths[0].Token
+			opts = append(opts, api.AddHeader("Authorization", fmt.Sprintf("token %s", token)))
+		}
 	}
 	return api.NewClient(opts...), nil
 }

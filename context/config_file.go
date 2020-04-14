@@ -3,64 +3,79 @@ package context
 import (
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 
 	"gopkg.in/yaml.v3"
 )
 
-const defaultHostname = "github.com"
-
-type configEntry struct {
-	User  string
-	Token string `yaml:"oauth_token"`
-}
-
-func parseOrSetupConfigFile(fn string) (*configEntry, error) {
-	entry, err := parseConfigFile(fn)
+func parseOrSetupConfigFile(fn string) (Config, error) {
+	config, err := parseConfig(fn)
 	if err != nil && errors.Is(err, os.ErrNotExist) {
 		return setupConfigFile(fn)
 	}
-	return entry, err
+	return config, err
 }
 
-func parseConfigFile(fn string) (*configEntry, error) {
+func ParseDefaultConfig() (Config, error) {
+	return parseConfig(configFile())
+}
+
+var readConfig = func(fn string) ([]byte, error) {
 	f, err := os.Open(fn)
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
-	return parseConfig(f)
-}
 
-// ParseDefaultConfig reads the configuration file
-func ParseDefaultConfig() (*configEntry, error) {
-	return parseConfigFile(configFile())
-}
-
-func parseConfig(r io.Reader) (*configEntry, error) {
-	data, err := ioutil.ReadAll(r)
+	data, err := ioutil.ReadAll(f)
 	if err != nil {
 		return nil, err
 	}
-	var config yaml.Node
-	err = yaml.Unmarshal(data, &config)
+
+	return data, nil
+}
+
+func parseConfigFile(fn string) ([]byte, *yaml.Node, error) {
+	data, err := readConfig(fn)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	if len(config.Content) < 1 {
-		return nil, fmt.Errorf("malformed config")
+
+	var root yaml.Node
+	err = yaml.Unmarshal(data, &root)
+	if err != nil {
+		return data, nil, err
 	}
-	for i := 0; i < len(config.Content[0].Content)-1; i = i + 2 {
-		if config.Content[0].Content[i].Value == defaultHostname {
-			var entries []configEntry
-			err = config.Content[0].Content[i+1].Decode(&entries)
-			if err != nil {
-				return nil, err
-			}
-			return &entries[0], nil
+	if len(root.Content) < 1 {
+		return data, &root, fmt.Errorf("malformed config")
+	}
+	if root.Content[0].Kind != yaml.MappingNode {
+		return data, &root, fmt.Errorf("expected a top level map")
+	}
+
+	return data, &root, nil
+}
+
+func isLegacy(root *yaml.Node) bool {
+	for _, v := range root.Content[0].Content {
+		if v.Value == "hosts" {
+			return false
 		}
 	}
-	return nil, fmt.Errorf("could not find config entry for %q", defaultHostname)
+
+	return true
+}
+
+func parseConfig(fn string) (Config, error) {
+	_, root, err := parseConfigFile(fn)
+	if err != nil {
+		return nil, err
+	}
+
+	if isLegacy(root) {
+		return NewLegacyConfig(root), nil
+	}
+
+	return NewConfig(root), nil
 }
