@@ -63,7 +63,8 @@ func configGet(cmd *cobra.Command, args []string) error {
 	}
 
 	if val != "" {
-		fmt.Println(val)
+		out := colorableOut(cmd)
+		fmt.Fprintf(out, "%s\n", val)
 	}
 
 	return nil
