@@ -1,19 +1,27 @@
 package context
 
 import (
+	"io"
 	"reflect"
 	"testing"
 )
 
-func stubbedReadConfig(content string) func(fn string) ([]byte, error) {
-	return func(fn string) ([]byte, error) {
-		return []byte(content), nil
+func StubWriteConfig(w io.Writer) func() {
+	orig := WriteConfigFile
+	WriteConfigFile = func(fn string, data []byte) error {
+		_, err := w.Write(data)
+		return err
+	}
+	return func() {
+		WriteConfigFile = orig
 	}
 }
 
 func StubConfig(content string) func() {
 	orig := ReadConfigFile
-	ReadConfigFile = stubbedReadConfig(content)
+	ReadConfigFile = func(fn string) ([]byte, error) {
+		return []byte(content), nil
+	}
 	return func() {
 		ReadConfigFile = orig
 	}

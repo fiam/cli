@@ -69,7 +69,7 @@ func (as *askStubber) Stub(stubbedQuestions []*QuestionStub) {
 	as.Stubs = append(as.Stubs, stubbedQuestions)
 }
 
-func initBlankContext(repo, branch string) {
+func initBlankContext(cfg, repo, branch string) {
 	initContext = func() context.Context {
 		ctx := context.NewBlank()
 		ctx.SetBaseRepo(repo)
@@ -78,7 +78,13 @@ func initBlankContext(repo, branch string) {
 			"origin": "OWNER/REPO",
 		})
 
-		defer context.StubConfig(defaultTestConfig)()
+		if cfg == "" {
+			cfg = defaultTestConfig
+		}
+
+		// NOTE we are not restoring the original readConfig; we never want to touch the config file on
+		// disk during tests.
+		context.StubConfig(cfg)
 
 		return ctx
 	}

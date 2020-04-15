@@ -2,19 +2,17 @@ package command
 
 import (
 	"testing"
-
-	"github.com/cli/cli/context"
 )
 
 func TestConfigGet(t *testing.T) {
-	initBlankContext("OWNER/REPO", "master")
-	defer context.StubConfig(`---
+	cfg := `---
 hosts:
   github.com:
     user: OWNER
     oauth_token: MUSTBEHIGHCUZIMATOKEN
 editor: ed
-`)()
+`
+	initBlankContext(cfg, "OWNER/REPO", "master")
 
 	output, err := RunCommand(configGetCmd, "config get editor")
 	if err != nil {
@@ -25,9 +23,18 @@ editor: ed
 }
 
 func TestConfigGet_not_found(t *testing.T) {
+	initBlankContext("", "OWNER/REPO", "master")
+
+	output, err := RunCommand(configGetCmd, "config get editor")
+	if err != nil {
+		t.Fatalf("error running command `config get editor`: %v", err)
+	}
+
+	eq(t, output.String(), "")
 }
 
 func TestConfigSet(t *testing.T) {
+	initBlankContext("", "OWNER/REPO", "master")
 }
 
 func TestConfigSet_update(t *testing.T) {
