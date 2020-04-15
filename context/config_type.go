@@ -70,12 +70,13 @@ func (cm *ConfigMap) SetStringValue(key, value string) error {
 			Value: "",
 		}
 
-		cm.Root.Content[0].Content = append(cm.Root.Content[0].Content, keyNode, valueNode)
+		cm.Root.Content = append(cm.Root.Content, keyNode, valueNode)
 	} else if err != nil {
 		return err
 	}
 
 	valueNode.Value = value
+
 	return nil
 }
 
