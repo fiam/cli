@@ -3,6 +3,7 @@ package context
 import (
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 
@@ -67,6 +68,75 @@ func isLegacy(root *yaml.Node) bool {
 	return true
 }
 
+func migrateConfig(fn string, root *yaml.Node) error {
+	// TODO i'm sorry
+	newConfigData := map[string]map[string]map[string]string{}
+	newConfigData["hosts"] = map[string]map[string]string{}
+
+	topLevelKeys := root.Content[0].Content
+
+	for i, x := range topLevelKeys {
+		if x.Value == "" {
+			continue
+		}
+		if i+1 == len(topLevelKeys) {
+			break
+		}
+		hostname := x.Value
+		newConfigData["hosts"][hostname] = map[string]string{}
+
+		authKeys := topLevelKeys[i+1].Content[0].Content
+
+		for j, y := range authKeys {
+			if j+1 == len(authKeys) {
+				break
+			}
+			switch y.Value {
+			case "user":
+				newConfigData["hosts"][hostname]["user"] = authKeys[j+1].Value
+			case "oauth_token":
+				newConfigData["hosts"][hostname]["oauth_token"] = authKeys[j+1].Value
+			}
+		}
+	}
+
+	if _, ok := newConfigData["hosts"][defaultHostname]; !ok {
+		return errors.New("could not find default host configuration")
+	}
+
+	defaultHostConfig := newConfigData["hosts"][defaultHostname]
+
+	if _, ok := defaultHostConfig["user"]; !ok {
+		return errors.New("default host configuration missing user")
+	}
+
+	if _, ok := defaultHostConfig["oauth_token"]; !ok {
+		return errors.New("default host configuration missing oauth_token")
+	}
+
+	newConfig, err := yaml.Marshal(newConfigData)
+	if err != nil {
+		return err
+	}
+
+	err = os.Rename(fn, fn+".bak")
+	if err != nil {
+		return fmt.Errorf("failed to back up existing config: %s", err)
+	}
+	cfgFile, err := os.OpenFile(fn, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
+	if err != nil {
+		return fmt.Errorf("failed to open new config file for writing: %s", err)
+	}
+	defer cfgFile.Close()
+
+	n, err := cfgFile.Write(newConfig)
+	if err == nil && n < len(newConfig) {
+		err = io.ErrShortWrite
+	}
+
+	return err
+}
+
 func parseConfig(fn string) (Config, error) {
 	_, root, err := parseConfigFile(fn)
 	if err != nil {
@@ -74,7 +144,15 @@ func parseConfig(fn string) (Config, error) {
 	}
 
 	if isLegacy(root) {
-		return NewLegacyConfig(root), nil
+		err = migrateConfig(fn, root)
+		if err != nil {
+			return nil, err
+		}
+
+		_, root, err = parseConfigFile(fn)
+		if err != nil {
+			return nil, fmt.Errorf("failed to reparse migrated config: %s", err)
+		}
 	}
 
 	return NewConfig(root), nil

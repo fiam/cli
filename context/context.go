@@ -189,10 +189,8 @@ func (c *fsContext) AuthToken() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	hostConfig, err := config.ConfigForHost(defaultHostname)
 
-	// TODO change once we actually support using different usernames for a given host
-	return hostConfig.Auths[0].Token, nil
+	return config.Get(defaultHostname, "oauth_token")
 }
 
 func (c *fsContext) SetAuthToken(t string) {
@@ -204,13 +202,8 @@ func (c *fsContext) AuthLogin() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	hostConfig, err := config.DefaultHostConfig()
-	if err != nil {
-		return "", err
-	}
 
-	// TODO change once we actually support using different usernames for a given host
-	return hostConfig.Auths[0].User, nil
+	return config.Get(defaultHostname, "user")
 }
 
 func (c *fsContext) Branch() (string, error) {

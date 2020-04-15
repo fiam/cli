@@ -17,6 +17,9 @@ import (
 	"github.com/spf13/pflag"
 )
 
+// TODO these are sprinkled across command, context, and ghrepo
+const defaultHostname = "github.com"
+
 // Version is dynamically set by the toolchain or overridden by the Makefile.
 var Version = "DEV"
 
@@ -107,9 +110,7 @@ func BasicClient() (*api.Client, error) {
 	}
 	opts = append(opts, api.AddHeader("User-Agent", fmt.Sprintf("GitHub CLI %s", Version)))
 	if c, err := context.ParseDefaultConfig(); err == nil {
-		if hostConfig, err := c.DefaultHostConfig(); err == nil {
-			// TODO change once we actually support using different usernames for a given host
-			token := hostConfig.Auths[0].Token
+		if token, err := c.Get(defaultHostname, "oauth_token"); err == nil {
 			opts = append(opts, api.AddHeader("Authorization", fmt.Sprintf("token %s", token)))
 		}
 	}

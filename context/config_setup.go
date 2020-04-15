@@ -57,16 +57,12 @@ func setupConfigFile(filename string) (Config, error) {
 
 	// TODO this sucks. It precludes us laying out a nice config with comments and such.
 	type yamlConfig struct {
-		Hosts map[string][]*AuthConfig
+		Hosts map[string]map[string]string
 	}
 
-	yamlHosts := map[string][]*AuthConfig{}
-	yamlHosts[flow.Hostname] = []*AuthConfig{
-		&AuthConfig{
-			User:  userLogin,
-			Token: token,
-		},
-	}
+	yamlHosts := map[string]map[string]string{}
+	yamlHosts[flow.Hostname]["user"] = userLogin
+	yamlHosts[flow.Hostname]["oauth_token"] = token
 
 	defaultConfig := yamlConfig{
 		Hosts: yamlHosts,
