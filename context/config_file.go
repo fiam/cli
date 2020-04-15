@@ -84,6 +84,8 @@ func isLegacy(root *yaml.Node) bool {
 }
 
 func migrateConfig(fn string, root *yaml.Node) error {
+	// TODO make testable
+
 	// TODO i'm sorry
 	newConfigData := map[string]map[string]map[string]string{}
 	newConfigData["hosts"] = map[string]map[string]string{}
