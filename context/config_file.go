@@ -11,7 +11,7 @@ import (
 )
 
 func parseOrSetupConfigFile(fn string) (Config, error) {
-	config, err := parseConfig(fn)
+	config, err := ParseConfig(fn)
 	if err != nil && errors.Is(err, os.ErrNotExist) {
 		return setupConfigFile(fn)
 	}
@@ -19,10 +19,10 @@ func parseOrSetupConfigFile(fn string) (Config, error) {
 }
 
 func ParseDefaultConfig() (Config, error) {
-	return parseConfig(configFile())
+	return ParseConfig(configFile())
 }
 
-var readConfig = func(fn string) ([]byte, error) {
+var ReadConfigFile = func(fn string) ([]byte, error) {
 	f, err := os.Open(fn)
 	if err != nil {
 		return nil, err
@@ -37,8 +37,23 @@ var readConfig = func(fn string) ([]byte, error) {
 	return data, nil
 }
 
+var WriteConfigFile = func(fn string, data []byte) error {
+	cfgFile, err := os.OpenFile(configFile(), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600) // cargo coded from setup
+	if err != nil {
+		return err
+	}
+	defer cfgFile.Close()
+
+	n, err := cfgFile.Write(data)
+	if err == nil && n < len(data) {
+		err = io.ErrShortWrite
+	}
+
+	return err
+}
+
 func parseConfigFile(fn string) ([]byte, *yaml.Node, error) {
-	data, err := readConfig(fn)
+	data, err := ReadConfigFile(fn)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -137,7 +152,7 @@ func migrateConfig(fn string, root *yaml.Node) error {
 	return err
 }
 
-func parseConfig(fn string) (Config, error) {
+func ParseConfig(fn string) (Config, error) {
 	_, root, err := parseConfigFile(fn)
 	if err != nil {
 		return nil, err

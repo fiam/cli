@@ -12,6 +12,12 @@ import (
 	"github.com/cli/cli/context"
 )
 
+const defaultTestConfig = `hosts:
+  github.com:
+    user: OWNER
+    oauth_token: 1234567890
+`
+
 type askStubber struct {
 	Asks  [][]*survey.Question
 	Count int
@@ -71,6 +77,9 @@ func initBlankContext(repo, branch string) {
 		ctx.SetRemotes(map[string]string{
 			"origin": "OWNER/REPO",
 		})
+
+		defer context.StubConfig(defaultTestConfig)()
+
 		return ctx
 	}
 }

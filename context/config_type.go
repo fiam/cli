@@ -3,8 +3,6 @@ package context
 import (
 	"errors"
 	"fmt"
-	"io"
-	"os"
 
 	"gopkg.in/yaml.v3"
 )
@@ -153,22 +151,7 @@ func (c *fileConfig) Write() error {
 		return err
 	}
 
-	cfgFile, err := os.OpenFile(configFile(), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600) // cargo coded from setup
-	if err != nil {
-		return err
-	}
-	defer cfgFile.Close()
-
-	n, err := cfgFile.Write(marshalled)
-	if err == nil && n < len(marshalled) {
-		err = io.ErrShortWrite
-	}
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return WriteConfigFile(configFile(), marshalled)
 }
 
 func (c *fileConfig) Hosts() ([]*HostConfig, error) {

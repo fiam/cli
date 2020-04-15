@@ -95,7 +95,7 @@ func setupConfigFile(filename string) (Config, error) {
 	}
 
 	// TODO cleaner error handling? this "should" always work given that we /just/ wrote the file...
-	return parseConfig(filename)
+	return ParseConfig(filename)
 }
 
 func getViewer(token string) (string, error) {

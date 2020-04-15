@@ -1,7 +1,6 @@
 package context
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -24,7 +23,11 @@ type blankContext struct {
 }
 
 func (c *blankContext) Config() (Config, error) {
-	return nil, errors.New("todo implement BlankConfig")
+	config, err := ParseConfig("boom.txt")
+	if err != nil {
+		panic(fmt.Sprintf("failed to parse config during tests. did you remember to stub? error: %s", err))
+	}
+	return config, nil
 }
 
 func (c *blankContext) AuthToken() (string, error) {
