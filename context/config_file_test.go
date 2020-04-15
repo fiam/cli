@@ -31,46 +31,48 @@ func Test_parseConfig(t *testing.T) {
 	defer stubConfig(`---
 hosts:
   github.com:
-  - user: monalisa
+    user: monalisa
     oauth_token: OTOKEN
-  - user: wronguser
-    oauth_token: NOTTHIS
 `)()
 	config, err := parseConfig("filename")
 	eq(t, err, nil)
-	hostConfig, err := config.DefaultHostConfig()
+	user, err := config.Get("github.com", "user")
 	eq(t, err, nil)
-	eq(t, hostConfig.Auths[0].User, "monalisa")
-	eq(t, hostConfig.Auths[0].Token, "OTOKEN")
+	eq(t, user, "monalisa")
+	token, err := config.Get("github.com", "oauth_token")
+	eq(t, err, nil)
+	eq(t, token, "OTOKEN")
 }
 
 func Test_parseConfig_multipleHosts(t *testing.T) {
 	defer stubConfig(`---
 hosts:
   example.com:
-  - user: wronguser
+    user: wronguser
     oauth_token: NOTTHIS
   github.com:
-  - user: monalisa
+    user: monalisa
     oauth_token: OTOKEN
 `)()
 	config, err := parseConfig("filename")
 	eq(t, err, nil)
-	hostConfig, err := config.DefaultHostConfig()
+	user, err := config.Get("github.com", "user")
 	eq(t, err, nil)
-	eq(t, hostConfig.Auths[0].User, "monalisa")
-	eq(t, hostConfig.Auths[0].Token, "OTOKEN")
+	eq(t, user, "monalisa")
+	token, err := config.Get("github.com", "oauth_token")
+	eq(t, err, nil)
+	eq(t, token, "OTOKEN")
 }
 
 func Test_parseConfig_notFound(t *testing.T) {
 	defer stubConfig(`---
 hosts:
   example.com:
-  - user: wronguser
+    user: wronguser
     oauth_token: NOTTHIS
 `)()
 	config, err := parseConfig("filename")
 	eq(t, err, nil)
-	_, err = config.DefaultHostConfig()
+	_, err = config.configForHost("github.com")
 	eq(t, err, errors.New(`could not find config entry for "github.com"`))
 }
