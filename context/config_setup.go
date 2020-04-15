@@ -61,6 +61,7 @@ func setupConfigFile(filename string) (Config, error) {
 	}
 
 	yamlHosts := map[string]map[string]string{}
+	yamlHosts[flow.Hostname] = map[string]string{}
 	yamlHosts[flow.Hostname]["user"] = userLogin
 	yamlHosts[flow.Hostname]["oauth_token"] = token
 
